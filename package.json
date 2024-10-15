@@ -1,0 +1,53 @@
+{
+  "name": "preview-conversion",
+  "displayName": "preview-conversion",
+  "description": "auto preview converstion for all",
+  "version": "0.0.1",
+  "publisher": "CListery",
+	"homepage": "https://github.com/CListery/Preview-Conversion",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/CListery/Preview-Conversion.git"
+	},
+  "engines": {
+    "vscode": "^1.91.1"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "preview-conversion.conversion",
+        "title": "preview-conversion: conversion all"
+      },
+      {
+        "command": "preview-conversion.conversion(unicode)",
+        "title": "preview-conversion: conversion only unicode"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.91.1",
+    "@types/mocha": "^10.0.8",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "eslint": "^9.11.1",
+    "typescript": "^5.6.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}
