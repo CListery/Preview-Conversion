@@ -2,13 +2,15 @@
   "name": "preview-conversion",
   "displayName": "preview-conversion",
   "description": "auto preview converstion for all",
-  "version": "0.0.1",
+  "version": "0.2.1",
   "publisher": "CListery",
-	"homepage": "https://github.com/CListery/Preview-Conversion",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/CListery/Preview-Conversion.git"
-	},
+  "license": "MIT",
+  "icon": "icon/icon.png",
+  "homepage": "https://github.com/CListery/Preview-Conversion",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CListery/Preview-Conversion.git"
+  },
   "engines": {
     "vscode": "^1.91.1"
   },
@@ -23,11 +25,11 @@
     "commands": [
       {
         "command": "preview-conversion.conversion",
-        "title": "preview-conversion: conversion all"
+        "title": "preview-conversion: conversion all ✨"
       },
       {
         "command": "preview-conversion.conversion(unicode)",
-        "title": "preview-conversion: conversion only unicode"
+        "title": "preview-conversion: conversion only unicode 🚀"
       }
     ]
   },
@@ -40,14 +42,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.91.1",
     "@types/mocha": "^10.0.8",
     "@types/node": "20.x",
+    "@types/vscode": "^1.91.1",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "eslint": "^9.11.1",
-    "typescript": "^5.6.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.11.1",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.4",
+    "cron-parser": "^4.9.0"
   }
 }

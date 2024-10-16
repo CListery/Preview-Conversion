@@ -2,8 +2,17 @@
 
 All notable changes to the "preview-conversion" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [RELEASE]
 
-## [Unreleased]
+- 0.2.1
+  - update README & CHANGELOG
 
-- Initial release
+- 0.2.0
+  - support CronTab preview
+  - support Base64 preview
+  - optimize Timestamp preview
+  - optimize Unicode preview
+
+- 0.0.1 [Initial release]
+  - support Timestamp preview
+  - support Unicode preview
