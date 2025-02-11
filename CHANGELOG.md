@@ -4,6 +4,9 @@ All notable changes to the "preview-conversion" extension will be documented in 
 
 ## [RELEASE]
 
+- 0.2.2
+  - optimize Unicode preview
+
 - 0.2.1
   - update README & CHANGELOG
 

@@ -150,16 +150,40 @@ export function activate(context: vscode.ExtensionContext) {
 			if (ConvertType.UNKNOWN === result.convertType) {
 				return undefined;
 			}
+
+			let providerResult: vscode.ProviderResult<vscode.Hover>;
+
 			switch (result.convertType) {
 				case ConvertType.TIME:
-					return handleTime(hoveredWord[result.index]);
+					providerResult = handleTime(hoveredWord[result.index]);
+					break;
 				case ConvertType.UNICODE:
-					return handleUnicode(hoveredWord[result.index]);
+					providerResult = handleUnicode(hoveredWord[result.index]);
+					break;
 				case ConvertType.CRONTAB:
-					return handleCronTab(hoveredWord[result.index]);
+					providerResult = handleCronTab(hoveredWord[result.index]);
+					break;
 				case ConvertType.BASE64:
-					return handleBase64(hoveredWord[result.index]);
+					providerResult = handleBase64(hoveredWord[result.index]);
+					break;
 			}
+
+			// console.log('type:', typeof providerResult);
+
+			function isHover(r: any): r is vscode.Hover {
+				return (<vscode.Hover>r)?.contents !== undefined;
+			}
+
+			if (isHover(providerResult)) {
+				providerResult.contents = [
+					...providerResult.contents,
+					// new vscode.MarkdownString('&#10084;', true)
+				];
+			}
+
+			console.log('providerResult:', providerResult);
+
+			return providerResult;
 		}
 	});
 
@@ -468,7 +492,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const data = convertResult.wrap();
 
 		if (!data.isBase64()) {
-			console.error('handleBase64: not Base64!');
+			// console.error('handleBase64: not Base64!');
 			return;
 		}
 
@@ -505,9 +529,21 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	function convertUnicode(hoveredWord: string): string {
-		return hoveredWord.replace(/\\u([a-fA-F0-9]{4})/g, (_, hex) =>
-			String.fromCharCode(parseInt(hex, 16))
-		);
+		const unicodeRegex = /\\U([\da-fA-F]{8})|[\\]?U\+([\da-fA-F]{5})|[\\]?U\+([\da-fA-F]{4})|\\u([\da-fA-F]{4})/g;
+
+		return hoveredWord.replace(unicodeRegex, (match, u8p, u5p, u4p, u4) => {
+			// console.log('convertUnicode:', match, u8p, u5p, u4p, u4);
+			if (u4) {
+				return String.fromCharCode(parseInt(u4, 16));
+			} else if (u4p) {
+				return String.fromCharCode(parseInt(u4p, 16));
+			} else if (u5p) {
+				return String.fromCodePoint(parseInt(u5p, 16));
+			} else if (u8p) {
+				return String.fromCodePoint(parseInt(u8p, 16));
+			}
+			return match;
+		});
 	}
 
 	function handleUnicode(hoveredWord: string): vscode.ProviderResult<vscode.Hover> {
@@ -575,8 +611,10 @@ export function activate(context: vscode.ExtensionContext) {
 		if (hoveredWord.length === 0) {
 			return ConvertType.UNKNOWN;
 		}
-		const timeRegex = /^-?[0-9]+$/g;
-		const unicodeRegex = /\\u([a-fA-F0-9]{4})/g;
+		function checkTime(): boolean {
+			const timeRegex = /^-?[0-9]+$/g;
+			return timeRegex.test(hoveredWord);
+		}
 
 		function checkBase64(): boolean {
 			const base64Regex = /(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/g;
@@ -607,9 +645,19 @@ export function activate(context: vscode.ExtensionContext) {
 			return false;
 		}
 
-		if (timeRegex.test(hoveredWord)) {
+		function checkUniCode(): boolean {
+			const unicodeRegex = /\\U([\da-fA-F]{8})|[\\]?U\+([\da-fA-F]{4,5})|\\u([\da-fA-F]{4})/g;
+
+			let result = hoveredWord.match(unicodeRegex);
+			// console.log('checkUniCode:', result);
+			return result?.some(it => {
+				return it.length > 0;
+			}) ?? false;
+		}
+
+		if (checkTime()) {
 			return ConvertType.TIME;
-		} else if (unicodeRegex.test(hoveredWord)) {
+		} else if (checkUniCode()) {
 			return ConvertType.UNICODE;
 		} else if (checkCronTab()) {
 			return ConvertType.CRONTAB;
