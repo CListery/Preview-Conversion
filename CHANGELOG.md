@@ -4,6 +4,9 @@ All notable changes to the "preview-conversion" extension will be documented in 
 
 ## [RELEASE]
 
+- 0.2.3
+  - support batch conversion
+
 - 0.2.2
   - optimize Unicode preview
 

@@ -3,12 +3,16 @@
 import * as vscode from 'vscode';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import cronParser from 'cron-parser';
+import { promises as fs } from 'fs';
+import { MessageTypes, showMessage } from './helper/message';
+import path from 'path';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	const register = vscode.commands.registerTextEditorCommand;
+	const registerCommand = vscode.commands.registerCommand;
 
 	class Result<T> {
 		private success: boolean;
@@ -84,6 +88,111 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
+	function conversion(data: string, only_unicode: boolean = true): string {
+		let fullText = data;
+		fullText = convertUnicode(fullText);
+		if (!only_unicode) {
+			fullText = fullText.replace(/-?\d{9}\d+/g, (_substring, _): string => {
+				const conversionResult = convertTime(_substring);
+				if (conversionResult.isOk()) {
+					const dataOutput = new Date(Number(conversionResult.wrap().timestamp.toString()));
+					return formatDateByLocale(dataOutput);
+				} else {
+					return _substring;
+				}
+			});
+		}
+		return fullText;
+	}
+
+	async function handleFile(fsPath: string, only_unicode: boolean = false): Promise<void> {
+		try {
+			const data = await fs.readFile(fsPath, 'utf8');
+
+			const filePath = path.dirname(fsPath);
+			const extension = path.extname(fsPath);
+			const baseName = path.basename(fsPath, extension);
+			const newName = `${baseName}.convert${extension}`;
+			const path2NewFile = path.join(filePath, newName);
+
+			await fs.writeFile(path2NewFile, conversion(data, only_unicode), { encoding: 'utf8' });
+		} catch (error) {
+			console.error(`handle file fail! ${fsPath}:`, error);
+			showMessage(error instanceof Error ? error.message : String(error), MessageTypes.Error);
+			throw error;
+		}
+	}
+
+	async function loadFiles(target: string): Promise<string[]> {
+		try {
+			const stat = await fs.stat(target);
+
+			if (stat.isDirectory()) {
+				let files: string[] = [];
+
+				const items = await fs.readdir(target);
+
+				for (let index = 0; index < items.length; index++) {
+					const item = items[index];
+
+					const fullPath = path.join(target, item);
+					const stat = await fs.stat(fullPath);
+
+					if (stat.isDirectory()) {
+						files.push(...(await loadFiles(fullPath)));
+					} else if (stat.isFile()) {
+						files.push(fullPath);
+					}
+				}
+				return files;
+			} else {
+				return [target];
+			}
+		} catch (error) {
+			console.error(`load file list error ${target}:`, error);
+			showMessage(error instanceof Error ? error.message : String(error), MessageTypes.Error);
+			throw error;
+		}
+	}
+
+	async function handleFiles(fileUri: vscode.Uri | undefined, only_unicode: boolean = false): Promise<void> {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "conversion...",
+			cancellable: true
+		}, async (progress, token) => {
+			token.onCancellationRequested(() => {
+				console.log("canceled");
+			});
+			if (fileUri) {
+				progress.report({ message: 'load files...' });
+
+				const files: string[] = await loadFiles(fileUri.fsPath);
+
+				const t = 100 / files.length;
+				for (let index = 0; index < files.length; index++) {
+					if (token.isCancellationRequested) {
+						break;
+					}
+					const f = files[index];
+
+					// console.log(index, index / files.length);
+					progress.report({ message: `conversation ${f}...`, increment: t });
+
+					await handleFile(f, only_unicode);
+				}
+
+				if (token.isCancellationRequested) {
+					showMessage('conversion canceled!', MessageTypes.Informational);
+				} else {
+					showMessage('conversion doen!', MessageTypes.Informational);
+				}
+			} else {
+				showMessage('file path invalid! ⛔', MessageTypes.Error);
+			}
+		});
+	}
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	// console.warn('"preview-conversion" active!');
@@ -97,16 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
 		register('preview-conversion.conversion', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => {
 			const document = textEditor.document;
 			let fullText = document.getText();
-			fullText = convertUnicode(fullText);
-			fullText = fullText.replace(/-?\d{9}\d+/g, (_substring, _): string => {
-				const conversionResult = convertTime(_substring);
-				if (conversionResult.isOk()) {
-					const dataOutput = new Date(Number(conversionResult.wrap().timestamp.toString()));
-					return formatDateByLocale(dataOutput);
-				} else {
-					return _substring;
-				}
-			});
+			fullText = conversion(fullText, false);
 			textEditor.edit((editBuilder) => {
 				editBuilder.replace(new vscode.Range(0, 0, document.lineCount, 0), fullText);
 			});
@@ -114,10 +214,16 @@ export function activate(context: vscode.ExtensionContext) {
 		register('preview-conversion.conversion(unicode)', (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => {
 			const document = textEditor.document;
 			let fullText = document.getText();
-			fullText = convertUnicode(fullText);
+			fullText = conversion(fullText, true);
 			textEditor.edit((editBuilder) => {
 				editBuilder.replace(new vscode.Range(0, 0, document.lineCount, 0), fullText);
 			});
+		}),
+		registerCommand('preview-conversion.ConversionFiles', async (fileUri: vscode.Uri | undefined) => {
+			await handleFiles(fileUri, false);
+		}),
+		registerCommand('preview-conversion.ConversionFiles(unicode)', async (fileUri: vscode.Uri | undefined) => {
+			await handleFiles(fileUri, true);
 		}),
 	];
 

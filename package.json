@@ -2,7 +2,7 @@
   "name": "preview-conversion",
   "displayName": "preview-conversion",
   "description": "auto preview converstion for all",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "CListery",
   "license": "MIT",
   "icon": "icon/icon.png",
@@ -30,8 +30,30 @@
       {
         "command": "preview-conversion.conversion(unicode)",
         "title": "preview-conversion: conversion only unicode 🚀"
+      },
+      {
+        "command": "preview-conversion.ConversionFiles",
+        "title": "preview-conversion: conversion all for the selected file/folder ✨"
+      },
+      {
+        "command": "preview-conversion.ConversionFiles(unicode)",
+        "title": "preview-conversion: conversion only unicode for the selected file/folder 🚀"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "preview-conversion.ConversionFiles",
+          "when": "true",
+          "group": "preview-conversion"
+        },
+        {
+          "command": "preview-conversion.ConversionFiles(unicode)",
+          "when": "true",
+          "group": "preview-conversion"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
